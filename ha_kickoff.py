@@ -48,7 +48,11 @@ class HAProxy:
                 m = re.search(r'(\S+):(\d+)', line)
                 ip = m.group(1)
                 port = m.group(2)
-                is_enable = False if re.match('#', line.strip()) else True
+                #is_enable = False if re.match('#', line.strip()) else True
+                if re.match('#', line.strip()):
+                    is_enable = False
+                else:
+                    is_enable = True
                 appserver = AppServer(ip, port, is_enable)
                 self.appservers.append(appserver)
                 self.ip_list.append(ip)
@@ -59,11 +63,16 @@ class HAProxy:
                 if appserver.enable_switched:
                     server_pattern = '%s:%s' % (appserver.ip, appserver.port)
                     if re.search(server_pattern, self.lines[i]):
-                        self.lines[i] = re.sub('#', '', self.lines[i]) if appserver.is_enable else re.sub('^', '#', self.lines[i])
+                        #self.lines[i] = re.sub('#', '', self.lines[i]) if appserver.is_enable else re.sub('^', '#', self.lines[i])
+                        if appserver.is_enable:
+                            self.lines[i] = re.sub('#', '', self.lines[i]) 
+                        else:
+                            self.lines[i] = re.sub('^', '#', self.lines[i])
 
     def print_config(self):
-        for line in self.lines:
-            print(line)
+        #for line in self.lines:
+        print(''.join(self.lines))
+        #    print(line)
 
     def save_config(self, config_path=None):
         if config_path is None:
@@ -108,7 +117,7 @@ if __name__ == "__main__":
                     appserver.switch_enable(opts.switch_status)
         else:
             for appserver in haproxy.appservers:
-                if appserver.ip == opts.ip and appserver.port == port and appserver.is_enable is not opts.switch_status:
+                if appserver.ip == opts.ip and appserver.port == opts.port and appserver.is_enable is not opts.switch_status:
                     appserver.switch_enable(opts.switch_status)
 
         haproxy.refresh_config()
